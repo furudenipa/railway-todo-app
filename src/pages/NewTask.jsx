@@ -1,8 +1,10 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useCookies } from 'react-cookie';
-import axios from 'axios';
-import { url } from '../const';
+
 import { Header } from '../components/Header';
+import { url } from '../const';
+
 import './newTask.scss';
 import { useNavigate } from 'react-router-dom';
 
