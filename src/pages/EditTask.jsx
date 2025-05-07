@@ -15,16 +15,24 @@ export const EditTask = () => {
   const [title, setTitle] = useState('');
   const [detail, setDetail] = useState('');
   const [isDone, setIsDone] = useState();
+  const [limit, setLimit] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const handleTitleChange = (e) => setTitle(e.target.value);
   const handleDetailChange = (e) => setDetail(e.target.value);
   const handleIsDoneChange = (e) => setIsDone(e.target.value === 'done');
+  const handleLimitChange = (e) => {
+    const date = new Date(e.target.value);
+    // Convert to UTC ISO string and trim milliseconds
+    const utcString = date.toISOString().split('.')[0] + 'Z';
+    setLimit(utcString);
+  };
   const onUpdateTask = () => {
     console.log(isDone);
     const data = {
       title: title,
       detail: detail,
       done: isDone,
+      limit: limit,
     };
 
     axios
@@ -69,6 +77,14 @@ export const EditTask = () => {
         setTitle(task.title);
         setDetail(task.detail);
         setIsDone(task.done);
+        if (task.limit) {
+          // Convert UTC string to local datetime-local format
+          const date = new Date(task.limit);
+          const localDateTime = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+            .toISOString()
+            .slice(0, 16);
+          setLimit(task.limit);
+        }
       })
       .catch((err) => {
         setErrorMessage(`タスク情報の取得に失敗しました。${err}`);
@@ -120,6 +136,16 @@ export const EditTask = () => {
             />
             完了
           </div>
+          <br />
+          <label>期限</label>
+          <br />
+          <input
+            type="datetime-local"
+            onChange={handleLimitChange}
+            className="edit-task-limit"
+            value={limit ? new Date(limit).toISOString().slice(0, 16) : ''}
+          />
+          <br />
           <button type="button" className="delete-task-button" onClick={onDeleteTask}>
             削除
           </button>

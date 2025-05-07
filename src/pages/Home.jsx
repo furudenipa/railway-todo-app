@@ -115,6 +115,23 @@ export const Home = () => {
 };
 
 // 表示するタスク
+// 残り時間を計算する関数
+const calculateRemainingTime = (deadline) => {
+  if (!deadline) return null;
+
+  const now = new Date();
+  const limitDate = new Date(deadline);
+  const diff = limitDate - now;
+
+  if (diff < 0) return '期限切れ';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `残り ${days}日${hours}時間${minutes}分`;
+};
+
 const Tasks = (props) => {
   const { tasks, selectListId, isDoneDisplay } = props;
   if (tasks === null) return <></>;
@@ -132,6 +149,14 @@ const Tasks = (props) => {
                 {task.title}
                 <br />
                 {task.done ? '完了' : '未完了'}
+                {task.limit && (
+                  <>
+                    <br />
+                    期限: {new Date(task.limit).toLocaleString('ja-JP')}
+                    <br />
+                    {calculateRemainingTime(task.limit)}
+                  </>
+                )}
               </Link>
             </li>
           ))}
@@ -151,6 +176,14 @@ const Tasks = (props) => {
               {task.title}
               <br />
               {task.done ? '完了' : '未完了'}
+              {task.limit && (
+                <>
+                  <br />
+                  期限: {new Date(task.limit).toLocaleString('ja-JP')}
+                  <br />
+                  {calculateRemainingTime(task.limit)}
+                </>
+              )}
             </Link>
           </li>
         ))}
