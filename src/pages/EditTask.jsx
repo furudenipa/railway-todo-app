@@ -79,11 +79,10 @@ export const EditTask = () => {
         setIsDone(task.done);
         if (task.limit) {
           // Convert UTC string to local datetime-local format
-          const date = new Date(task.limit);
-          const localDateTime = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-            .toISOString()
-            .slice(0, 16);
-          setLimit(task.limit);
+          const jpDate = new Date(task.limit).setHours(
+            new Date(task.limit).getHours() + 9,
+          );
+          setLimit(jpDate);
         }
       })
       .catch((err) => {
@@ -143,7 +142,7 @@ export const EditTask = () => {
             type="datetime-local"
             onChange={handleLimitChange}
             className="edit-task-limit"
-            value={limit ? new Date(limit).toISOString().slice(0, 16) : ''}
+            value={limit ? new Date(limit).toISOString().slice(0,16) : ''}
           />
           <br />
           <button type="button" className="delete-task-button" onClick={onDeleteTask}>

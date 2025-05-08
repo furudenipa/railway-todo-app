@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCookies } from 'react-cookie';
 import { Link } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ export const Home = () => {
   const [tasks, setTasks] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [cookies] = useCookies();
+  const tabRefs = useRef([]);
   const handleIsDoneDisplayChange = (e) => setIsDoneDisplay(e.target.value);
   useEffect(() => {
     axios
@@ -49,21 +50,28 @@ export const Home = () => {
     }
   }, [lists]);
 
-  const handleSelectList = (id) => {
-    setSelectListId(id);
-    axios
-      .get(`${url}/lists/${id}/tasks`, {
-        headers: {
-          authorization: `Bearer ${cookies.token}`,
-        },
-      })
-      .then((res) => {
-        setTasks(res.data.tasks);
-      })
-      .catch((err) => {
-        setErrorMessage(`タスクの取得に失敗しました。${err}`);
-      });
+  const selectAndFocus = (idx) => {
+    const id = lists[idx].id;
+    setSelectListId(id);           
+    axios.get(`${url}/lists/${id}/tasks`, { headers: { authorization: `Bearer ${cookies.token}` } })
+      .then((res) => setTasks(res.data.tasks))
+      .catch((err) => setErrorMessage(`タスクの取得に失敗しました。${err}`));
+    tabRefs.current[idx]?.focus(); 
   };
+
+  const onTabKeyDown = (e, idx) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      selectAndFocus(idx);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (idx + 1 < lists.length) selectAndFocus(idx + 1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (idx - 1 >= 0) selectAndFocus(idx - 1);
+    }
+  };
+
   return (
     <div>
       <Header />
@@ -81,14 +89,19 @@ export const Home = () => {
               </p>
             </div>
           </div>
-          <ul className="list-tab">
-            {lists.map((list, key) => {
+          <ul className="list-tab" role="tablist">
+            {lists.map((list, idx) => {
               const isActive = list.id === selectListId;
               return (
                 <li
-                  key={key}
+                  key={list.id}
+                  ref={(el) => (tabRefs.current[idx] = el)}
+                  role="tab"
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}              
                   className={`list-tab-item ${isActive ? 'active' : ''}`}
-                  onClick={() => handleSelectList(list.id)}
+                  onClick={() => selectAndFocus(idx)}
+                  onKeyDown={(e) => onTabKeyDown(e, idx)}
                 >
                   {list.title}
                 </li>
@@ -101,7 +114,11 @@ export const Home = () => {
               <Link to="/task/new">タスク新規作成</Link>
             </div>
             <div className="display-select-wrapper">
-              <select onChange={handleIsDoneDisplayChange} className="display-select">
+              <select 
+                onChange={handleIsDoneDisplayChange} 
+                className="display-select"
+                aria-label="タスクの表示切り替え"
+              >
                 <option value="todo">未完了</option>
                 <option value="done">完了</option>
               </select>
@@ -138,14 +155,18 @@ const Tasks = (props) => {
 
   if (isDoneDisplay == 'done') {
     return (
-      <ul>
+      <ul role="list">
         {tasks
           .filter((task) => {
             return task.done === true;
           })
           .map((task, key) => (
-            <li key={key} className="task-item">
-              <Link to={`/lists/${selectListId}/tasks/${task.id}`} className="task-item-link">
+            <li key={key} className="task-item" role="listitem">
+              <Link 
+                to={`/lists/${selectListId}/tasks/${task.id}`} 
+                className="task-item-link"
+                aria-label={`${task.title} ${task.done ? '完了' : '未完了'} ${task.limit ? `期限: ${new Date(task.limit).toLocaleString('ja-JP')} ${calculateRemainingTime(task.limit)}` : ''}`}
+              >
                 {task.title}
                 <br />
                 {task.done ? '完了' : '未完了'}
@@ -165,14 +186,18 @@ const Tasks = (props) => {
   }
 
   return (
-    <ul>
+    <ul role="list">
       {tasks
         .filter((task) => {
           return task.done === false;
         })
         .map((task, key) => (
-          <li key={key} className="task-item">
-            <Link to={`/lists/${selectListId}/tasks/${task.id}`} className="task-item-link">
+          <li key={key} className="task-item" role="listitem">
+              <Link 
+                to={`/lists/${selectListId}/tasks/${task.id}`} 
+                className="task-item-link"
+                aria-label={`${task.title} ${task.done ? '完了' : '未完了'} ${task.limit ? `期限: ${new Date(task.limit).toLocaleString('ja-JP')} ${calculateRemainingTime(task.limit)}` : ''}`}
+              >
               {task.title}
               <br />
               {task.done ? '完了' : '未完了'}
